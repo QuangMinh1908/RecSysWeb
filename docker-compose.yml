@@ -1,0 +1,17 @@
+services:
+  db:
+    image: postgres:16
+    container_name: ecommerce-recsys-db
+    environment:
+      POSTGRES_DB: ecommerce_recsys
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Các file .sql trong thư mục này chạy tự động ở lần khởi tạo đầu tiên
+      - ./database/init:/docker-entrypoint-initdb.d:ro
+
+volumes:
+  pgdata:
