@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.*;
 
@@ -21,7 +22,7 @@ public class QuerySessionStore {
     private final ConcurrentMap<String, CachedSession> store = new ConcurrentHashMap<>();
     private ScheduledExecutorService cleanupExecutor;
 
-    record CachedSession(List<ItemView> items, Instant createdAt) {}
+    public record CachedSession(List<ItemView> items, List<ItemView> randomItems, Instant createdAt) {}
 
     @PostConstruct
     public void init() {
@@ -36,8 +37,12 @@ public class QuerySessionStore {
         }
     }
 
-    public void save(String sessionId, List<ItemView> items) {
-        store.put(sessionId, new CachedSession(items, Instant.now()));
+    public void save(String sessionId, List<ItemView> items, List<ItemView> randomItems) {
+        store.put(sessionId, new CachedSession(items, randomItems, Instant.now()));
+    }
+
+    public CachedSession getSession(String sessionId) {
+        return store.get(sessionId);
     }
 
     public List<ItemView> get(String sessionId) {

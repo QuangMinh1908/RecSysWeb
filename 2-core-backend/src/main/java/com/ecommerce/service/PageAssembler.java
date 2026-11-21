@@ -10,7 +10,8 @@ import java.util.List;
 @Component
 public class PageAssembler {
 
-    public SearchPage assemble(String sessionId, List<ItemView> allItems, int page, int pageSize) {
+    public SearchPage assemble(String sessionId, List<ItemView> allItems, List<ItemView> baselineItems, int page, int pageSize) {
+        List<ItemView> safeBaseline = baselineItems != null ? baselineItems : Collections.emptyList();
         if (allItems == null || allItems.isEmpty()) {
             return SearchPage.builder()
                     .sessionId(sessionId)
@@ -19,6 +20,8 @@ public class PageAssembler {
                     .totalPages(0)
                     .totalItems(0)
                     .items(Collections.emptyList())
+                    .randomItems(safeBaseline)
+                    .baselineItems(safeBaseline)
                     .build();
         }
 
@@ -38,6 +41,8 @@ public class PageAssembler {
                 .totalPages(totalPages)
                 .totalItems(totalItems)
                 .items(slice)
+                .randomItems(safeBaseline)
+                .baselineItems(safeBaseline)
                 .build();
     }
 }

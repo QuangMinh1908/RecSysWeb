@@ -47,7 +47,7 @@ export default function SearchPage() {
     <div className="min-h-screen bg-gray-50/50 pb-16">
       {/* Top Header Banner */}
       <header className="bg-white border-b border-gray-200 sticky top-0 z-30 shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
+        <div className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 bg-gradient-to-tr from-orange-600 to-red-500 rounded-xl flex items-center justify-center text-white font-black text-lg shadow-sm">
               S
@@ -74,7 +74,7 @@ export default function SearchPage() {
       </header>
 
       {/* Main Content Area */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <main className="max-w-[1550px] mx-auto px-4 sm:px-6 lg:px-8 pt-6">
         {/* Search Form with 3 inputs */}
         <SearchForm onSearch={handleSearch} loading={loading} />
 
@@ -84,6 +84,7 @@ export default function SearchPage() {
         ) : searchResponse?.items && searchResponse.items.length > 0 ? (
           <ResultGrid
             items={searchResponse.items}
+            randomItems={searchResponse.randomItems || []}
             page={searchResponse.page}
             totalPages={searchResponse.totalPages}
             totalItems={searchResponse.totalItems}

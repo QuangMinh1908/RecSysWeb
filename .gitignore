@@ -23,4 +23,5 @@ yarn-error.log*
 *.njsproj
 *.sln
 *.sw?
-*.sh
+*.sh*.pid
+*.log

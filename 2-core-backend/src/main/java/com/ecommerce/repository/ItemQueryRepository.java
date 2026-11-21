@@ -22,7 +22,7 @@ public class ItemQueryRepository {
             FROM items i
             LEFT JOIN snapshots s ON i.item_id = s.item_id AND s.snapshot_date = ?::date
             WHERE i.keyword_id = ? AND i.imported_date = ?::date
-            ORDER BY i.item_id
+            ORDER BY i.item_id ASC
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -46,6 +46,44 @@ public class ItemQueryRepository {
                     .imageUrl(rs.getString("image_path"))
                     .build();
         }, dateStr, keywordId, dateStr);
+    }
+
+    public List<ItemView> findBaselineItemsByKeywordAndDate(String keywordId, String dateStr, int limit) {
+        String sql = """
+            SELECT i.item_id, i.name, i.category, i.brand_id, i.seller_id,
+                   i.original_price, i.shop_name, i.image_path,
+                   s.price, s.discount_rate, s.rating_average, s.review_count, s.sold_count
+            FROM items i
+            LEFT JOIN snapshots s ON i.item_id = s.item_id AND s.snapshot_date = ?::date
+            WHERE i.keyword_id = ? AND i.imported_date = ?::date
+            ORDER BY i.item_id ASC
+            LIMIT ?
+        """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            long itemId = rs.getLong("item_id");
+            double origPrice = rs.getDouble("original_price");
+            double currentPrice = rs.getObject("price") != null ? rs.getDouble("price") : origPrice;
+
+            return ItemView.builder()
+                    .itemId(itemId)
+                    .name(rs.getString("name"))
+                    .category(rs.getString("category"))
+                    .brandId(rs.getLong("brand_id"))
+                    .sellerId(rs.getLong("seller_id"))
+                    .originalPrice(origPrice)
+                    .currentPrice(currentPrice)
+                    .discountRate(rs.getDouble("discount_rate"))
+                    .ratingAverage(rs.getDouble("rating_average") > 0 ? rs.getDouble("rating_average") : 4.5)
+                    .reviewCount(rs.getInt("review_count"))
+                    .soldCount(rs.getDouble("sold_count"))
+                    .shopName(rs.getString("shop_name"))
+                    .imageUrl(rs.getString("image_path"))
+                    .decision("BASELINE")
+                    .priceVolatilityTier("Database")
+                    .rank(rowNum + 1)
+                    .build();
+        }, dateStr, keywordId, dateStr, limit);
     }
 
     public Map<Long, List<ModelRequest.ProductSnapshot>> findSnapshotsHistory(List<Long> itemIds, String upToDate) {

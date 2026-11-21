@@ -17,4 +17,6 @@ public class SearchPage {
     private int totalPages;
     private long totalItems;
     private List<ItemView> items;
+    private List<ItemView> randomItems;
+    private List<ItemView> baselineItems;
 }
