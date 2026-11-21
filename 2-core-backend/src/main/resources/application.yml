@@ -30,4 +30,4 @@ app:
     page-size: 20
     session-ttl-minutes: 30
   images:
-    base-dir: "/home/ds300/data/image"
+    base-dir: "/home/ds300/Demo-Web/data/image"
