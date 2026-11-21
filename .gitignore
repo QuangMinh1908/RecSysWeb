@@ -18,6 +18,7 @@ torch_install.log
 # --- Database & Datasets (Managed via Hugging Face CLI) ---
 database/
 data/
+dataset/
 *.sql
 *.csv
 *.tsv
