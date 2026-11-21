@@ -39,8 +39,8 @@ public class SearchService {
             return pageAssembler.assemble(UUID.randomUUID().toString(), List.of(), List.of(), 1, appProperties.getSearch().getPageSize());
         }
 
-        // 1. Lấy dữ liệu đối chứng trực tiếp từ DB theo thứ tự cố định (ORDER BY item_id ASC, không random)
-        List<ItemView> baselineItems = itemQueryRepository.findBaselineItemsByKeywordAndDate(keyword, date, 8);
+        // 1. Lấy TOÀN BỘ dữ liệu đối chứng trực tiếp từ DB theo thứ tự cố định (ORDER BY item_id ASC, không giới hạn)
+        List<ItemView> baselineItems = itemQueryRepository.findBaselineItemsByKeywordAndDate(keyword, date);
 
         // 2. Query snapshots history cho tất cả item
         List<Long> itemIds = rawItems.stream().map(ItemView::getItemId).toList();
@@ -65,7 +65,7 @@ public class SearchService {
             rankedItems.get(i).setRank(i + 1);
         }
 
-        // 5. Lưu vào cache session (cả danh sách đã khuyến nghị và baseline DB cố định)
+        // 5. Lưu vào cache session (cả danh sách đã khuyến nghị và toàn bộ baseline DB)
         String sessionId = UUID.randomUUID().toString();
         querySessionStore.save(sessionId, rankedItems, baselineItems);
 

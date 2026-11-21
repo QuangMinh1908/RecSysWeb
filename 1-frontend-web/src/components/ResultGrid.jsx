@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import ItemCard from './ItemCard'
 import { ChevronLeft, ChevronRight, Sparkles, Database } from 'lucide-react'
 
@@ -11,7 +11,22 @@ export default function ResultGrid({
   onPageChange,
   loading,
 }) {
+  const [baselinePage, setBaselinePage] = useState(1)
+  const BASELINE_PAGE_SIZE = 8
+
+  // Reset baseline page when search result changes
+  useEffect(() => {
+    setBaselinePage(1)
+  }, [items, randomItems])
+
   if (!items || items.length === 0) return null
+
+  const baselineTotalItems = randomItems ? randomItems.length : 0
+  const baselineTotalPages = Math.max(1, Math.ceil(baselineTotalItems / BASELINE_PAGE_SIZE))
+  const currentBaselineItems = (randomItems || []).slice(
+    (baselinePage - 1) * BASELINE_PAGE_SIZE,
+    baselinePage * BASELINE_PAGE_SIZE
+  )
 
   return (
     <div className="space-y-6">
@@ -51,7 +66,7 @@ export default function ResultGrid({
             ))}
           </div>
 
-          {/* Pagination Controls */}
+          {/* Pagination Controls for Model Section */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-1.5 pt-4 border-t border-gray-100">
               <button
@@ -97,46 +112,86 @@ export default function ResultGrid({
           )}
         </section>
 
-        {/* RIGHT PORTION: Database Baseline in Fixed Order (Đối chứng gốc) */}
-        <section className="lg:col-span-4 xl:col-span-4 bg-gray-50/80 border border-gray-200 rounded-2xl p-5 shadow-xs">
-          {/* Section Header */}
-          <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-slate-700 text-white flex items-center justify-center shadow-xs">
-                <Database className="w-4 h-4" />
-              </div>
-              <div>
-                <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
-                  <span>Dữ liệu gốc từ Database</span>
-                  <span className="text-xs font-semibold text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full">
-                    Thứ tự DB
-                  </span>
-                </h3>
-                <p className="text-xs text-gray-500">
-                  Lấy trực tiếp từ database theo thứ tự cố định (chưa qua AI)
-                </p>
+        {/* RIGHT PORTION: Database Baseline with Full Items & Pagination (Đối chứng gốc) */}
+        <section className="lg:col-span-4 xl:col-span-4 bg-gray-50/80 border border-gray-200 rounded-2xl p-5 shadow-xs flex flex-col justify-between">
+          <div>
+            {/* Section Header */}
+            <div className="flex items-center justify-between pb-4 mb-4 border-b border-gray-200">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-slate-700 text-white flex items-center justify-center shadow-xs">
+                  <Database className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                    <span>Dữ liệu gốc từ Database</span>
+                    <span className="text-xs font-semibold text-gray-600 bg-gray-200 px-2 py-0.5 rounded-full">
+                      Toàn bộ {baselineTotalItems} SP
+                    </span>
+                  </h3>
+                  <p className="text-xs text-gray-500">
+                    Thứ tự lưu trữ tuần tự trong DB (chưa qua AI)
+                  </p>
+                </div>
               </div>
             </div>
-            <span className="text-xs font-medium text-gray-500 bg-white px-2 py-1 rounded-md border border-gray-200">
-              {randomItems.length} mẫu
-            </span>
+
+            {/* Baseline Items Grid */}
+            {currentBaselineItems && currentBaselineItems.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {currentBaselineItems.map((item) => (
+                  <ItemCard
+                    key={`baseline-${item.itemId}`}
+                    item={item}
+                    isRandom={false}
+                    compact={true}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 text-xs text-gray-400">
+                Chưa có dữ liệu gốc đối chứng
+              </div>
+            )}
           </div>
 
-          {/* Baseline Items Grid */}
-          {randomItems && randomItems.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {randomItems.map((item) => (
-                <ItemCard
-                  key={`baseline-${item.itemId}`}
-                  item={item}
-                  isRandom={false}
-                  compact={true}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-10 text-xs text-gray-400">
-              Chưa có dữ liệu gốc đối chứng
+          {/* Pagination Controls for Database Section */}
+          {baselineTotalPages > 1 && (
+            <div className="pt-3 border-t border-gray-200 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span className="text-[11px] text-gray-500">
+                Trang <span className="font-semibold text-gray-700">{baselinePage}</span> / {baselineTotalPages} (8 SP/trang)
+              </span>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setBaselinePage((p) => Math.max(1, p - 1))}
+                  disabled={baselinePage <= 1}
+                  className="px-2 py-1 rounded border border-gray-200 text-xs font-medium text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  <ChevronLeft className="w-3 h-3" />
+                </button>
+
+                {Array.from({ length: baselineTotalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={`b-page-${p}`}
+                    onClick={() => setBaselinePage(p)}
+                    className={`w-6 h-6 rounded text-xs font-medium transition ${
+                      p === baselinePage
+                        ? 'bg-slate-800 text-white shadow-xs'
+                        : 'text-gray-600 hover:bg-white border border-gray-200'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                ))}
+
+                <button
+                  onClick={() => setBaselinePage((p) => Math.min(baselineTotalPages, p + 1))}
+                  disabled={baselinePage >= baselineTotalPages}
+                  className="px-2 py-1 rounded border border-gray-200 text-xs font-medium text-gray-600 hover:bg-white disabled:opacity-40 disabled:cursor-not-allowed transition"
+                >
+                  <ChevronRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           )}
         </section>

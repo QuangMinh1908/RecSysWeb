@@ -48,7 +48,7 @@ public class ItemQueryRepository {
         }, dateStr, keywordId, dateStr);
     }
 
-    public List<ItemView> findBaselineItemsByKeywordAndDate(String keywordId, String dateStr, int limit) {
+    public List<ItemView> findBaselineItemsByKeywordAndDate(String keywordId, String dateStr) {
         String sql = """
             SELECT i.item_id, i.name, i.category, i.brand_id, i.seller_id,
                    i.original_price, i.shop_name, i.image_path,
@@ -57,7 +57,6 @@ public class ItemQueryRepository {
             LEFT JOIN snapshots s ON i.item_id = s.item_id AND s.snapshot_date = ?::date
             WHERE i.keyword_id = ? AND i.imported_date = ?::date
             ORDER BY i.item_id ASC
-            LIMIT ?
         """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> {
@@ -83,7 +82,7 @@ public class ItemQueryRepository {
                     .priceVolatilityTier("Database")
                     .rank(rowNum + 1)
                     .build();
-        }, dateStr, keywordId, dateStr, limit);
+        }, dateStr, keywordId, dateStr);
     }
 
     public Map<Long, List<ModelRequest.ProductSnapshot>> findSnapshotsHistory(List<Long> itemIds, String upToDate) {
