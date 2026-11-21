@@ -1,73 +1,144 @@
-import { useState } from 'react'
-import { ImageOff, ShoppingCart } from 'lucide-react'
+import React, { useState } from 'react'
+import { formatVND, getImageUrl } from '../services/api'
 
-const vnd = new Intl.NumberFormat('vi-VN', {
-  style: 'currency',
-  currency: 'VND',
-  maximumFractionDigits: 0,
-})
-
-function discountPercent(price, originalPrice) {
-  if (!originalPrice || originalPrice <= price) return 0
-  return Math.round((1 - price / originalPrice) * 100)
+const FALLBACKS = {
+  ao_thun_nam: [
+    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=700&q=85'
+  ],
+  chuot_khong_day: [
+    'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1605773527852-c546a8584ea3?auto=format&fit=crop&w=700&q=85'
+  ],
+  sua: [
+    'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1563636619-e9143da7973b?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1528750997573-59b89d56f4f7?auto=format&fit=crop&w=700&q=85'
+  ],
+  tai_nghe_khong_day: [
+    'https://images.unsplash.com/photo-1590658268037-6bf12165a8df?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1572536147248-ac59a8abfa4b?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=700&q=85'
+  ]
 }
 
-export default function ProductCard({ product, onClick, onAddToCart }) {
-  const [imageFailed, setImageFailed] = useState(false)
-  const discount = discountPercent(product.price, product.originalPrice)
+function resolvePhoto(item) {
+  if (item.imageUrl) {
+    const u = getImageUrl(item.imageUrl)
+    if (u && !u.includes('placehold.co')) return u
+  }
+  const cat = item.category || 'ao_thun_nam'
+  const list = FALLBACKS[cat] || FALLBACKS.ao_thun_nam
+  const idx = Math.abs(Number(item.itemId) || 0) % list.length
+  return list[idx]
+}
+
+export default function ProductCard({ item, isBaseline = false, onLike, isLiked = false }) {
+  const [imgSrc, setImgSrc] = useState(() => resolvePhoto(item))
+  const ctrValue = item.pClick ?? item.pclick
+  const pClickPercent = ctrValue != null ? Math.round(Number(ctrValue) * 100) : null
+  const isHighVol = item.priceVolatilityTier === 'High'
+  const isMedVol = item.priceVolatilityTier === 'Medium'
+
+  const rankTag = isBaseline ? `#${item.rank ?? 1}` : `#${item.rank ?? 1} Gợi ý`
 
   return (
-    <article className="flex flex-col overflow-hidden rounded-xl border border-line bg-white transition-shadow hover:shadow-lg">
-      {/* Vùng bấm chính: ghi nhận hành vi CLICK */}
-      <button
-        type="button"
-        onClick={() => onClick(product)}
-        className="flex flex-1 flex-col text-left"
-      >
-        <div className="relative aspect-square w-full bg-paper">
-          {imageFailed || !product.imageUrl ? (
-            <div className="grid size-full place-items-center text-ink-soft/60">
-              <ImageOff className="size-10" aria-label="Không tải được ảnh" />
-            </div>
-          ) : (
-            <img
-              src={product.imageUrl}
-              alt={product.name}
-              loading="lazy"
-              referrerPolicy="no-referrer"
-              onError={() => setImageFailed(true)}
-              className="size-full object-cover"
-            />
-          )}
-          {discount > 0 && (
-            <span className="absolute right-0 top-2 rounded-l-md bg-sale px-2 py-0.5 text-xs font-bold text-white">
-              -{discount}%
-            </span>
-          )}
-        </div>
+    <article className="product-card">
+      <div className={`product-image ${isBaseline ? 'compact' : ''}`}>
+        <img
+          src={imgSrc}
+          alt={item.name}
+          onError={() => {
+            const cat = item.category || 'ao_thun_nam'
+            const list = FALLBACKS[cat] || FALLBACKS.ao_thun_nam
+            setImgSrc(list[0])
+          }}
+        />
 
-        <div className="flex flex-1 flex-col gap-2 p-3">
-          <h3 className="line-clamp-2 min-h-10 text-sm leading-5 font-medium">{product.name}</h3>
-          <div className="mt-auto flex flex-wrap items-baseline gap-x-2">
-            <span className="text-base font-bold text-sale">{vnd.format(product.price)}</span>
-            {discount > 0 && (
-              <span className="text-xs text-ink-soft line-through">
-                {vnd.format(product.originalPrice)}
+        {/* Top-left Rank Tag */}
+        <span className={`product-tag ${isBaseline ? 'product-tag-db' : ''}`}>
+          {rankTag}
+        </span>
+
+        {/* Discount Badge */}
+        {item.discountRate > 0 && (
+          <span className="product-discount-tag">
+            -{Math.round(item.discountRate)}%
+          </span>
+        )}
+
+        {/* CTR & Volatility Badges */}
+        {!isBaseline && (
+          <>
+            {pClickPercent != null && (
+              <span className="badge-ctr-pill">
+                CTR: {pClickPercent}%
               </span>
             )}
-          </div>
-        </div>
-      </button>
+            {item.priceVolatilityTier && (
+              <span
+                className={`badge-vol-pill ${
+                  isHighVol ? 'vol-high' : isMedVol ? 'vol-med' : 'vol-low'
+                }`}
+              >
+                {item.priceVolatilityTier} Vol
+              </span>
+            )}
+          </>
+        )}
 
-      <div className="px-3 pb-3">
+        {/* Heart Like Button */}
         <button
+          className={isLiked ? 'liked' : ''}
+          onClick={() => onLike && onLike(item.itemId)}
+          aria-label={`Yêu thích ${item.name}`}
           type="button"
-          onClick={() => onAddToCart(product)}
-          className="flex h-9 w-full items-center justify-center gap-2 rounded-lg border border-leaf text-sm font-semibold text-leaf transition-colors hover:bg-leaf hover:text-white"
         >
-          <ShoppingCart className="size-4" aria-hidden="true" />
-          Thêm vào giỏ
+          <svg
+            width="13"
+            height="13"
+            viewBox="0 0 24 24"
+            fill={isLiked ? 'currentColor' : 'none'}
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1.1-1.1a5.5 5.5 0 0 0-7.8 7.8l1.1 1.1L12 21l7.8-7.5 1.1-1.1a5.5 5.5 0 0 0-.1-7.8Z" />
+          </svg>
         </button>
+      </div>
+
+      <div className="product-info">
+        {/* 1. TÊN SẢN PHẨM Ở TRÊN (CHỮ TO HƠN, HOVER CHUYỂN SANG VÀNG) */}
+        <h3 className="product-title" title={item.name}>
+          {item.name}
+        </h3>
+
+        {/* 2. TÊN SHOP Ở DƯỚI (CHỮ NHỎ HƠN) & ĐÁNH GIÁ SAO */}
+        <div className="product-shop-row">
+          <span className="product-shop-name" title={item.shopName || 'CHÍNH HÃNG'}>
+            {item.shopName || 'CHÍNH HÃNG'}
+          </span>
+          <span className="product-rating">
+            ★ {(item.ratingAverage ?? 4.5).toFixed(1)}
+          </span>
+        </div>
+
+        {/* 3. GIÁ BÁN & SỐ LƯỢNG ĐÃ BÁN */}
+        <div className="product-price-row">
+          <strong className="product-current-price">{formatVND(item.currentPrice)}</strong>
+          {item.originalPrice > item.currentPrice && (
+            <del className="product-old-price">{formatVND(item.originalPrice)}</del>
+          )}
+          <span className="product-sold-count">
+            Đã bán {Math.round(item.soldCount ?? 0).toLocaleString('vi-VN')}
+          </span>
+        </div>
       </div>
     </article>
   )

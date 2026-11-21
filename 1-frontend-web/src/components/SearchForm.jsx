@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Search, Calendar, User, Sparkles, Filter } from 'lucide-react'
+import { Search, Calendar, User } from 'lucide-react'
 import { PERSONAS, KEYWORD_LABELS, fetchKeywords, fetchDates } from '../services/api'
 
 export default function SearchForm({ onSearch, loading }) {
@@ -9,6 +9,7 @@ export default function SearchForm({ onSearch, loading }) {
   const [selectedDate, setSelectedDate] = useState('latest')
   const [selectedPersona, setSelectedPersona] = useState(0)
 
+  // Fetch keywords once on mount
   useEffect(() => {
     fetchKeywords()
       .then((kws) => {
@@ -20,16 +21,13 @@ export default function SearchForm({ onSearch, loading }) {
       .catch((err) => console.error('Failed to load keywords:', err))
   }, [])
 
+  // Fetch dates when selectedKeyword changes (no auto search)
   useEffect(() => {
     if (selectedKeyword) {
       fetchDates(selectedKeyword)
         .then((ds) => {
           setDates(ds || [])
-          if (ds && ds.length > 0) {
-            setSelectedDate(ds[0])
-          } else {
-            setSelectedDate('latest')
-          }
+          setSelectedDate('latest')
         })
         .catch((err) => console.error('Failed to load dates:', err))
     }
@@ -45,76 +43,165 @@ export default function SearchForm({ onSearch, loading }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-gray-200/80 p-5 mb-8">
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Top input bar: Keyword + Date + Submit */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5">
+    <div
+      style={{
+        background: 'var(--deep)',
+        border: '1px solid var(--line)',
+        borderRadius: '6px',
+        padding: '20px',
+        margin: '16px 3vw 0',
+      }}
+    >
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        {/* Top input bar: Keyword + Date + Search Button */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(12, 1fr)', gap: '12px', alignItems: 'flex-end' }}>
           {/* Keyword Select */}
-          <div className="md:col-span-5">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
-              <Search className="w-3.5 h-3.5 text-orange-500" /> Ngành hàng / Keyword
+          <div style={{ gridColumn: 'span 5' }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                fontWeight: '700',
+                color: 'var(--orange)',
+                textTransform: 'uppercase',
+                letterSpacing: '.06em',
+                marginBottom: '6px',
+              }}
+            >
+              <Search size={14} color="var(--orange)" /> Ngành hàng / Keyword
             </label>
-            <div className="relative">
-              <select
-                value={selectedKeyword}
-                onChange={(e) => setSelectedKeyword(e.target.value)}
-                className="w-full bg-gray-50 border border-gray-300 hover:border-orange-500 text-gray-800 text-sm rounded-xl px-3.5 py-2.5 outline-none transition focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
-              >
-                {keywords.map((kw) => (
-                  <option key={kw} value={kw}>
-                    {KEYWORD_LABELS[kw] || kw}
-                  </option>
-                ))}
-              </select>
-            </div>
+            <select
+              value={selectedKeyword}
+              onChange={(e) => setSelectedKeyword(e.target.value)}
+              style={{
+                width: '100%',
+                background: 'var(--dark)',
+                border: '1px solid var(--line)',
+                color: 'var(--ink)',
+                fontSize: '12px',
+                fontWeight: '600',
+                padding: '9px 12px',
+                borderRadius: '4px',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
+            >
+              {keywords.map((kw) => (
+                <option key={kw} value={kw} style={{ background: 'var(--dark)', color: 'var(--ink)' }}>
+                  {KEYWORD_LABELS[kw] || kw}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Date Select */}
-          <div className="md:col-span-4">
-            <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-1.5 flex items-center gap-1.5">
-              <Calendar className="w-3.5 h-3.5 text-orange-500" /> Ngày dữ liệu (Snapshot)
+          <div style={{ gridColumn: 'span 4' }}>
+            <label
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                fontSize: '11px',
+                fontWeight: '700',
+                color: 'var(--orange)',
+                textTransform: 'uppercase',
+                letterSpacing: '.06em',
+                marginBottom: '6px',
+              }}
+            >
+              <Calendar size={14} color="var(--orange)" /> Ngày dữ liệu (Snapshot)
             </label>
             <select
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full bg-gray-50 border border-gray-300 hover:border-orange-500 text-gray-800 text-sm rounded-xl px-3.5 py-2.5 outline-none transition focus:ring-2 focus:ring-orange-500/20 focus:border-orange-500"
+              style={{
+                width: '100%',
+                background: 'var(--dark)',
+                border: '1px solid var(--line)',
+                color: 'var(--ink)',
+                fontSize: '12px',
+                fontWeight: '600',
+                padding: '9px 12px',
+                borderRadius: '4px',
+                outline: 'none',
+                cursor: 'pointer',
+              }}
             >
-              <option value="latest">Mới nhất (Latest)</option>
+              <option value="latest" style={{ background: 'var(--dark)', color: 'var(--ink)' }}>
+                Mới nhất (Latest)
+              </option>
               {dates.map((d) => (
-                <option key={d} value={d}>
+                <option key={d} value={d} style={{ background: 'var(--dark)', color: 'var(--ink)' }}>
                   {d}
                 </option>
               ))}
             </select>
           </div>
 
-          {/* Search Button */}
-          <div className="md:col-span-3 flex items-end">
+          {/* Submit Search Button (Đúng chữ "Tìm kiếm") */}
+          <div style={{ gridColumn: 'span 3' }}>
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 disabled:opacity-60 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-orange-500/20 flex items-center justify-center gap-2 transition duration-200 cursor-pointer text-sm"
+              style={{
+                width: '100%',
+                height: '38px',
+                background: 'var(--orange)',
+                color: 'var(--dark)',
+                border: 0,
+                borderRadius: '4px',
+                fontSize: '12px',
+                fontWeight: '800',
+                letterSpacing: '.06em',
+                textTransform: 'uppercase',
+                cursor: loading ? 'not-allowed' : 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                opacity: loading ? 0.7 : 1,
+                transition: 'background .15s',
+              }}
             >
               {loading ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Đang chấm điểm AI...
-                </>
+                <span>Đang tìm kiếm...</span>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4" /> Tìm kiếm gợi ý AI
+                  <Search size={14} />
+                  <span>Tìm kiếm</span>
                 </>
               )}
             </button>
           </div>
         </div>
 
-        {/* Persona Selector Tabs/Cards */}
+        {/* Persona Selector Row */}
         <div>
-          <label className="block text-xs font-semibold uppercase tracking-wider text-gray-500 mb-2 flex items-center gap-1.5">
-            <User className="w-3.5 h-3.5 text-orange-500" /> Persona người dùng (Temporal CTR Matching)
+          <label
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontSize: '11px',
+              fontWeight: '700',
+              color: 'var(--orange)',
+              textTransform: 'uppercase',
+              letterSpacing: '.06em',
+              marginBottom: '8px',
+            }}
+          >
+            <User size={14} color="var(--orange)" /> Persona người dùng
           </label>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2.5">
+
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(5, 1fr)',
+              gap: '8px',
+            }}
+          >
             {PERSONAS.map((p) => {
               const isSelected = selectedPersona === p.id
               return (
@@ -122,23 +209,35 @@ export default function SearchForm({ onSearch, loading }) {
                   type="button"
                   key={p.id}
                   onClick={() => setSelectedPersona(p.id)}
-                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                    isSelected
-                      ? 'border-orange-500 bg-orange-50/60 ring-2 ring-orange-500/20 shadow-xs'
-                      : 'border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50'
-                  }`}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: '4px',
+                    textAlign: 'left',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    border: isSelected ? '2px solid var(--orange)' : '1px solid var(--line)',
+                    background: isSelected ? 'rgba(255, 173, 36, 0.15)' : 'var(--dark)',
+                    color: 'var(--ink)',
+                    transition: 'all .2s',
+                  }}
                 >
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <span className="text-base">{p.icon}</span>
-                    <span
-                      className={`text-xs font-bold ${
-                        isSelected ? 'text-orange-700' : 'text-gray-800'
-                      }`}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '4px' }}>
+                    <span style={{ fontSize: '15px' }}>{p.icon}</span>
+                    <strong
+                      style={{
+                        fontSize: '12px',
+                        fontWeight: '700',
+                        color: isSelected ? 'var(--orange)' : 'var(--ink)',
+                      }}
                     >
                       {p.label}
-                    </span>
+                    </strong>
                   </div>
-                  <span className="text-[11px] text-gray-500 line-clamp-1">{p.desc}</span>
+                  <span style={{ fontSize: '10px', opacity: 0.65, lineHeight: 1.2 }}>
+                    {p.desc}
+                  </span>
                 </button>
               )
             })}
