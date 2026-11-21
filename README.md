@@ -1,3 +1,8 @@
+# E-commerce RecSys — Frontend + Backend + Database
+
+Hoàn thành giai đoạn 1–3: PostgreSQL → Spring Boot → React.
+Module `3-recsys-engine` (FastAPI) sẽ làm ở bước sau.
+
 ## Yêu cầu
 Docker (hoặc PostgreSQL 14+), JDK 21, Maven 3.9+, Node 18+.
 
