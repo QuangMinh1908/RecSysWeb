@@ -19,6 +19,7 @@ export const KEYWORD_LABELS = {
   ao_thun_nam: 'Áo Thun Nam',
   chuot_khong_day: 'Chuột Không Dây',
   sua: 'Sữa & Bỉm',
+  laptop: 'Laptop & Máy Tính',
   tai_nghe_khong_day: 'Tai Nghe Không Dây',
 }
 
