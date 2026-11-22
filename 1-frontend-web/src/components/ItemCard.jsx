@@ -50,7 +50,7 @@ export default function ItemCard({ item, isBaseline = false, onLike, isLiked = f
   return (
     <article className="item-card">
       <div className={`item-media ${isBaseline ? 'compact' : ''}`}>
-        <img
+        <img loading="lazy" decoding="async"
           src={imgSrc}
           alt={item.name}
           onError={() => {

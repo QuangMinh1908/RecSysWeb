@@ -61,7 +61,7 @@ export default function ShopeeCard({ item, isBaseline = false, onLike, isLiked =
     <article className="shopee-card" onClick={() => onLike && onLike(item.itemId)}>
       {/* 1:1 Aspect Ratio Image */}
       <div className="shopee-card-img-wrap">
-        <img
+        <img loading="lazy" decoding="async"
           src={imgSrc}
           alt={item.name}
           className="shopee-card-img"

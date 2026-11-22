@@ -54,6 +54,8 @@ export default function ProductCard({ item, isBaseline = false, onLike, isLiked 
         <img
           src={imgSrc}
           alt={item.name}
+          loading="lazy"
+          decoding="async"
           onError={() => {
             const cat = item.category || 'chuot_khong_day'
             const list = FALLBACKS[cat] || FALLBACKS.chuot_khong_day
