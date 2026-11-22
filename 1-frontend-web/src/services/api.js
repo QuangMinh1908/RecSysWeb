@@ -16,10 +16,9 @@ export const PERSONAS = [
 ]
 
 export const KEYWORD_LABELS = {
-  ao_thun_nam: 'Áo Thun Nam',
   chuot_khong_day: 'Chuột Không Dây',
-  sua: 'Sữa & Bỉm',
   laptop: 'Laptop & Máy Tính',
+  sua: 'Sữa & Bỉm',
   tai_nghe_khong_day: 'Tai Nghe Không Dây',
 }
 
@@ -60,8 +59,11 @@ export function getImageUrl(rawPath) {
   if (!rawPath) return 'https://placehold.co/300x300?text=No+Image'
   if (rawPath.startsWith('http://') || rawPath.startsWith('https://')) return rawPath
   
-  // Example path: /home/ds300/data/image/2026-11-21/158941031_main.jpg -> /images/2026-11-21/158941031_main.jpg
-  const match = rawPath.match(/image\/(\d{4}-\d{2}-\d{2}\/.*)$/)
+  // Trích xuất tên file ảnh từ các định dạng path như:
+  // - /home/ds300/Demo-Web/dataset/image/46369259273_a1f00d3e.jpg -> 46369259273_a1f00d3e.jpg
+  // - image/46369259273_a1f00d3e.jpg -> 46369259273_a1f00d3e.jpg
+  // - /home/ds300/data/image/2026-11-21/158941031_main.jpg -> 2026-11-21/158941031_main.jpg
+  const match = rawPath.match(/image\/(.+)$/)
   if (match) {
     return `${API_BASE_URL}/images/${match[1]}`
   }

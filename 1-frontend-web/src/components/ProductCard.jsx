@@ -1,18 +1,15 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { formatVND, getImageUrl } from '../services/api'
 
 const FALLBACKS = {
-  ao_thun_nam: [
-    'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=700&q=85',
-    'https://images.unsplash.com/photo-1503341504253-dff4815485f1?auto=format&fit=crop&w=700&q=85',
-    'https://images.unsplash.com/photo-1603252109303-2751441dd157?auto=format&fit=crop&w=700&q=85',
-    'https://images.unsplash.com/photo-1583743814966-8936f5b7be1a?auto=format&fit=crop&w=700&q=85',
-    'https://images.unsplash.com/photo-1562157873-818bc0726f68?auto=format&fit=crop&w=700&q=85'
-  ],
   chuot_khong_day: [
     'https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=700&q=85',
     'https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=700&q=85',
     'https://images.unsplash.com/photo-1605773527852-c546a8584ea3?auto=format&fit=crop&w=700&q=85'
+  ],
+  laptop: [
+    'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=700&q=85',
+    'https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=700&q=85'
   ],
   sua: [
     'https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=700&q=85',
@@ -27,18 +24,23 @@ const FALLBACKS = {
 }
 
 function resolvePhoto(item) {
-  if (item.imageUrl) {
+  if (item && item.imageUrl) {
     const u = getImageUrl(item.imageUrl)
     if (u && !u.includes('placehold.co')) return u
   }
-  const cat = item.category || 'ao_thun_nam'
-  const list = FALLBACKS[cat] || FALLBACKS.ao_thun_nam
-  const idx = Math.abs(Number(item.itemId) || 0) % list.length
+  const cat = item?.category || 'chuot_khong_day'
+  const list = FALLBACKS[cat] || FALLBACKS.chuot_khong_day
+  const idx = Math.abs(Number(item?.itemId) || 0) % list.length
   return list[idx]
 }
 
 export default function ProductCard({ item, isBaseline = false, onLike, isLiked = false }) {
   const [imgSrc, setImgSrc] = useState(() => resolvePhoto(item))
+
+  useEffect(() => {
+    setImgSrc(resolvePhoto(item))
+  }, [item?.itemId, item?.imageUrl])
+
   const ctrValue = item.pClick ?? item.pclick
   const pClickPercent = ctrValue != null ? Math.round(Number(ctrValue) * 100) : null
   const isHighVol = item.priceVolatilityTier === 'High'
@@ -53,9 +55,10 @@ export default function ProductCard({ item, isBaseline = false, onLike, isLiked 
           src={imgSrc}
           alt={item.name}
           onError={() => {
-            const cat = item.category || 'ao_thun_nam'
-            const list = FALLBACKS[cat] || FALLBACKS.ao_thun_nam
-            setImgSrc(list[0])
+            const cat = item.category || 'chuot_khong_day'
+            const list = FALLBACKS[cat] || FALLBACKS.chuot_khong_day
+            const idx = Math.abs(Number(item.itemId) || 0) % list.length
+            setImgSrc(list[idx])
           }}
         />
 

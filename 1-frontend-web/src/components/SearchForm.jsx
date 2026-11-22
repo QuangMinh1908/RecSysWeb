@@ -4,7 +4,7 @@ import { PERSONAS, KEYWORD_LABELS, fetchKeywords, fetchDates } from '../services
 
 export default function SearchForm({ onSearch, loading }) {
   const [keywords, setKeywords] = useState([])
-  const [selectedKeyword, setSelectedKeyword] = useState('ao_thun_nam')
+  const [selectedKeyword, setSelectedKeyword] = useState('chuot_khong_day')
   const [dates, setDates] = useState([])
   const [selectedDate, setSelectedDate] = useState('latest')
   const [selectedPersona, setSelectedPersona] = useState(0)
