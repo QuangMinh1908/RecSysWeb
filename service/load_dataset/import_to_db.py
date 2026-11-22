@@ -22,6 +22,19 @@ from psycopg2.extras import execute_values
 # Đường dẫn mặc định
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 DEFAULT_DATASET_DIR = BASE_DIR / "dataset"
+LOG_FILE = BASE_DIR / "service" / "activity.log"
+
+def write_activity_log(message: str):
+    timestamp = time.strftime("%Y-%m-%d %H:%M:%S")
+    line = f"[{timestamp}] [DATASET_IMPORT] {message}
+"
+    try:
+        LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(LOG_FILE, "a", encoding="utf-8") as f:
+            f.write(line)
+    except Exception as e:
+        print(f"Warning: Could not write to log: {e}")
+
 
 KEYWORD_NAME_MAP = {
     "chuot_khong_day": "Chuột Không Dây",
@@ -329,6 +342,7 @@ def main():
         setup_image_symlink(dataset_dir)
 
         duration = time.time() - start_time
+        write_activity_log(f"SUCCESS | Imported {items_count:,} items, {snaps_count:,} snapshots, {len(image_map):,} images in {duration:.2f}s")
         print("\n" + "=" * 65)
         print("                 KẾT QUẢ NẠP DỮ LIỆU THÀNH CÔNG                  ")
         print("=" * 65)
