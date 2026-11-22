@@ -52,26 +52,30 @@ public class HttpModelClient implements ModelClient {
         }
 
         try {
-            List<CompletableFuture<ModelBatch>> futures = items.stream()
-                    .map(item -> CompletableFuture.supplyAsync(() -> {
-                        ModelRequest req = buildModelRequest(userId, personaId, preferredCategory, item, historyMap);
-                        return restClient.post()
-                                .uri("/predict")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .body(req)
-                                .retrieve()
-                                .body(ModelBatch.class);
-                    }, modelExecutor))
-                    .toList();
+            // [GIẢI PHÁP 1: BATCH API]
+            // Gom toàn bộ N sản phẩm vào một danh sách duy nhất để gửi trong 1 HTTP POST duy nhất tới /predict_batch
+            // Thay vì mở N kết nối HTTP song song làm tắc nghẽn GIL và Uvicorn
+            CompletableFuture<ModelBatch[]> future = CompletableFuture.supplyAsync(() -> {
+                List<ModelRequest> batchRequests = items.stream()
+                        .map(item -> buildModelRequest(userId, personaId, preferredCategory, item, historyMap))
+                        .toList();
 
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                    .get(appProperties.getModel().getTimeoutSeconds(), TimeUnit.SECONDS);
+                return restClient.post()
+                        .uri("/predict_batch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .body(batchRequests)
+                        .retrieve()
+                        .body(ModelBatch[].class);
+            }, modelExecutor);
+
+            ModelBatch[] responses = future.get(appProperties.getModel().getTimeoutSeconds(), TimeUnit.SECONDS);
 
             Map<Long, ModelBatch> predictions = new HashMap<>();
-            for (CompletableFuture<ModelBatch> f : futures) {
-                ModelBatch b = f.join();
-                if (b != null) {
-                    predictions.put(b.getItemId(), b);
+            if (responses != null) {
+                for (ModelBatch b : responses) {
+                    if (b != null) {
+                        predictions.put(b.getItemId(), b);
+                    }
                 }
             }
 
@@ -101,7 +105,7 @@ public class HttpModelClient implements ModelClient {
             return ranked;
 
         } catch (Exception e) {
-            log.warn("HttpModelClient call failed ({}). Falling back to heuristic model...", e.getMessage());
+            log.warn("HttpModelClient call failed ({}). Falling back to heuristic model...", e.getMessage(), e);
             return fallbackModelClient.rankItems(userId, personaId, preferredCategory, items, historyMap);
         }
     }
