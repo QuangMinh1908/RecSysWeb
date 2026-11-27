@@ -1,127 +1,119 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
+import { ArrowDownRight, CircleAlert, LoaderCircle, Search } from 'lucide-react'
+import HeroProducts from './components/HeroProducts'
 import SiteHeader from './components/SiteHeader'
 import SearchForm from './components/SearchForm'
 import ProductFeed from './components/ProductFeed'
 import SiteFooter from './components/SiteFooter'
 import { searchRecommendation, fetchNextPage } from './services/api'
-import { Sparkles } from 'lucide-react'
 
 export default function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
   const [searchResponse, setSearchResponse] = useState(null)
   const [likedItems, setLikedItems] = useState([])
-  const [lastQuery, setLastQuery] = useState(null)
 
-  // Explicit manual search only (KHÔNG TỰ ĐỘNG CHẠY TÌM SẢN PHẨM)
+  const scrollToResults = () => {
+    requestAnimationFrame(() => {
+      document.getElementById('results-title')?.focus({ preventScroll: true })
+      document.getElementById('shop')?.scrollIntoView()
+    })
+  }
+
   const handleSearch = async (query) => {
     setLoading(true)
     setError(null)
-    setLastQuery(query)
     try {
-      const data = await searchRecommendation(query)
-      setSearchResponse(data)
+      setSearchResponse(await searchRecommendation(query))
+      scrollToResults()
     } catch (err) {
-      console.error('Search error:', err)
-      setError(err?.response?.data?.message || err.message || 'Lỗi khi gọi API tìm kiếm')
+      setError({ message: err?.response?.data?.message || 'Không thể tải kết quả tìm kiếm.', retry: () => handleSearch(query) })
     } finally {
       setLoading(false)
     }
   }
 
-  const handlePageChange = async (newPage) => {
+  const handlePageChange = async (page) => {
     if (!searchResponse?.sessionId) return
     setLoading(true)
     setError(null)
     try {
-      const data = await fetchNextPage(searchResponse.sessionId, newPage)
-      setSearchResponse(data)
-      window.scrollTo({ top: 220, behavior: 'smooth' })
+      setSearchResponse(await fetchNextPage(searchResponse.sessionId, page))
+      scrollToResults()
     } catch (err) {
-      console.error('Page change error:', err)
-      setError(err?.response?.data?.message || err.message || 'Lỗi khi chuyển trang')
+      setError({ message: err?.response?.data?.message || 'Không thể tải trang kết quả này.', retry: () => handlePageChange(page) })
     } finally {
       setLoading(false)
     }
   }
 
   const handleToggleLike = (itemId) => {
-    setLikedItems((prev) =>
-      prev.includes(itemId) ? prev.filter((id) => id !== itemId) : [...prev, itemId]
-    )
+    setLikedItems((items) => items.includes(itemId) ? items.filter((id) => id !== itemId) : [...items, itemId])
   }
 
+  const hasResults = searchResponse?.items?.length > 0
+
   return (
-    <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      {/* 1. Header with announcement */}
+    <div className="app-shell" id="top">
+      <a className="skip-link" href="#main-content">Đến nội dung chính</a>
       <SiteHeader likedCount={likedItems.length} />
 
-      {/* 2. Search Form (Chọn ngành hàng, snapshot, persona - không tự động chạy) */}
-      <SearchForm onSearch={handleSearch} loading={loading} />
-
-      {/* 3. Main Item Feed */}
-      <main style={{ flex: 1 }}>
-        {error ? (
-          <div style={{ margin: '30px 3vw', padding: '30px', textAlign: 'center', background: 'var(--deep)', borderRadius: '4px' }}>
-            <p style={{ color: '#ef4444', fontWeight: 'bold' }}>{error}</p>
-            <button
-              onClick={() => lastQuery && handleSearch(lastQuery)}
-              className="ai-search-btn"
-              style={{ marginTop: '12px' }}
-            >
-              Thử lại
-            </button>
+      <main id="main-content" tabIndex={-1}>
+        <section className="catalog-hero wrap" aria-labelledby="hero-title">
+          <div className="hero-copy">
+            <h1 id="hero-title">
+              <span>Tìm đúng món.</span>
+              <span>Hợp gu bạn.</span>
+            </h1>
+            <a className="hero-link" href="#filters">Khám phá sản phẩm <ArrowDownRight size={19} aria-hidden="true" /></a>
           </div>
-        ) : searchResponse?.items && searchResponse.items.length > 0 ? (
-          <ProductFeed
-            items={searchResponse.items}
-            randomItems={searchResponse.randomItems || []}
-            page={searchResponse.page || 1}
-            totalPages={searchResponse.totalPages || 1}
-            totalItems={searchResponse.totalItems || 0}
-            onPageChange={handlePageChange}
-            loading={loading}
-            likedItems={likedItems}
-            onLike={handleToggleLike}
-          />
-        ) : !loading ? (
-          /* Empty / Waiting state when user hasn't clicked search yet */
-          <div
-            style={{
-              margin: '30px 3vw 60px',
-              padding: '60px 20px',
-              textAlign: 'center',
-              background: 'var(--dark)',
-              border: '1px dashed var(--line)',
-              borderRadius: '6px',
-            }}
-          >
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                margin: '0 auto 16px',
-                borderRadius: '50%',
-                background: 'rgba(255, 173, 36, 0.15)',
-                display: 'grid',
-                placeItems: 'center',
-                color: 'var(--orange)',
-              }}
-            >
-              <Sparkles size={24} />
+          <HeroProducts />
+        </section>
+
+        <section className="filter-section wrap" id="filters" aria-labelledby="filter-title">
+          <h2 className="filter-title" id="filter-title">Bộ lọc</h2>
+          <SearchForm onSearch={handleSearch} loading={loading} />
+        </section>
+
+        <div className="results-band">
+          <section className="results-section wrap" id="shop" aria-labelledby="results-title" aria-busy={loading}>
+            <div className="results-heading">
+              <h2 id="results-title" tabIndex={-1}>Sản phẩm</h2>
+              {hasResults && <p role="status">{(searchResponse.totalItems ?? searchResponse.items.length).toLocaleString('vi-VN')} sản phẩm</p>}
             </div>
-            <h3 style={{ margin: '0 0 8px', fontSize: '16px', color: 'var(--ink)' }}>
-              Sẵn sàng phân tích & gợi ý sản phẩm
-            </h3>
-            <p style={{ margin: 0, fontSize: '13px', color: 'rgba(247, 237, 219, 0.65)', maxWidth: '420px', marginInline: 'auto' }}>
-              Vui lòng chọn ngành hàng, ngày dữ liệu và gu mua sắm ở trên, sau đó nhấn nút{' '}
-              <strong style={{ color: 'var(--orange)' }}>"Tìm kiếm gợi ý AI"</strong> để xem kết quả.
-            </p>
-          </div>
-        ) : null}
-      </main>
 
-      {/* 4. Footer */}
+            {error && (
+              <div className="results-message results-error" role="alert">
+                <CircleAlert size={22} aria-hidden="true" />
+                <p>{error.message}</p>
+                <button className="secondary-button" type="button" onClick={error.retry}>Thử lại</button>
+              </div>
+            )}
+
+            {hasResults ? (
+              <ProductFeed
+                key={searchResponse.sessionId}
+                items={searchResponse.items}
+                randomItems={searchResponse.randomItems || []}
+                page={searchResponse.page}
+                totalPages={searchResponse.totalPages}
+                onPageChange={handlePageChange}
+                loading={loading}
+                likedItems={likedItems}
+                onLike={handleToggleLike}
+              />
+            ) : !error && (
+              <div className="results-message empty-results" role="status">
+                {loading ? <LoaderCircle className="spinner" size={24} aria-hidden="true" /> : <Search size={24} aria-hidden="true" />}
+                <div>
+                  <strong>{loading ? 'Đang tìm sản phẩm…' : searchResponse ? 'Không tìm thấy sản phẩm' : 'Chọn bộ lọc để xem sản phẩm'}</strong>
+                  {!loading && searchResponse && <p>Thử chọn ngành hàng hoặc ngày khác.</p>}
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+      </main>
       <SiteFooter />
     </div>
   )
